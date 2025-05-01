@@ -4,16 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Alopecia IAT</title>
-  <!-- jsPsych core & CSS -->
-  <link href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css" rel="stylesheet">
+  <!-- jsPsych CSS (browser-ready bundle) -->
+  <link
+    href="https://unpkg.com/jspsych@7.3.0/dist/css/jspsych.css"
+    rel="stylesheet"
+    type="text/css"
+  />
 </head>
 <body></body>
 
-<!-- jsPsych and plugins -->
-<script src="https://unpkg.com/jspsych@7.3.0/jspsych.js"></script>
-<script src="https://unpkg.com/@jspsych/plugin-html-button-response"></script>
-<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response"></script>
-<!-- Hammer.js for swipe -->
+<!-- jsPsych core & plugins (browser-ready bundles) -->
+<script src="https://unpkg.com/jspsych@7.3.0/dist/jspsych.js"></script>
+<script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.2.0/dist/plugin-html-button-response.js"></script>
+<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3/dist/plugin-html-keyboard-response.js"></script>
+<!-- Hammer.js for swipe detection -->
 <script src="https://unpkg.com/hammerjs@2.0.8/hammer.min.js"></script>
 
 <script>
@@ -36,14 +40,13 @@
     arr.map(w=>({stimulus:`<p style="font-size:2em;">${w}</p>`, correct}));
 
   // 2. Build each block’s trial array
-  // — practice images (Block 1 & 5) each repeated twice for 20 trials
   function repeat(arr,times){ return Array(times).fill(arr).flat(); }
   const block1Trials = jsPsych.randomization.shuffle(
     repeat(makeImageTrials(alopeciaImages,'left')
          .concat(makeImageTrials(hairImages,'right')), 2)
   );
   const block2Trials = jsPsych.randomization.shuffle(
-    makeWordTrials(goodWords,'left')  // left = GOOD
+    makeWordTrials(goodWords,'left')
       .concat(makeWordTrials(badWords,'right'))
   );
   const block3Trials = jsPsych.randomization.shuffle(
@@ -52,24 +55,22 @@
       .concat(makeWordTrials(goodWords,'left'))
       .concat(makeWordTrials(badWords,'right'))
   );
-  // Block 4 = same as 3, but twice as many test trials
   const block4Trials = jsPsych.randomization.shuffle(
     repeat(block3Trials, 2)
   );
-  // Block 5 = reverse image mapping
   const block5Trials = jsPsych.randomization.shuffle(
     repeat(makeImageTrials(hairImages,'left')
          .concat(makeImageTrials(alopeciaImages,'right')), 2)
   );
-  // Block 6 = reversed target + original attributes
   const block6Trials = jsPsych.randomization.shuffle(
     makeImageTrials(hairImages,'left')
       .concat(makeImageTrials(alopeciaImages,'right'))
       .concat(makeWordTrials(goodWords,'left'))
       .concat(makeWordTrials(badWords,'right'))
   );
-  // Block 7 = twice block6
-  const block7Trials = jsPsych.randomization.shuffle(repeat(block6Trials,2));
+  const block7Trials = jsPsych.randomization.shuffle(
+    repeat(block6Trials,2)
+  );
 
   // 3. Consent / welcome
   jsPsych.timeline.push({
@@ -96,7 +97,6 @@
 
   // 5. Generic swipe trial + feedback
   function makeBlock(blockNum, label, trials) {
-    // instruction
     jsPsych.timeline.push({
       type: 'html-button-response',
       stimulus: `<h3>Block ${blockNum}</h3>
@@ -105,7 +105,6 @@
       choices: ['Begin']
     });
 
-    // trial + feedback
     jsPsych.timeline.push({
       timeline: [
         {
@@ -148,7 +147,6 @@
       randomize_order: true
     });
 
-    // after block: POST data
     jsPsych.timeline.push({
       type: 'call-function',
       func: ()=>{
@@ -174,9 +172,8 @@
   jsPsych.timeline.push({
     type: 'html-button-response',
     stimulus: ()=> {
-      const all = jsPsych.data.get().filter(trial=>trial.correct!==undefined).values();
+      const all = jsPsych.data.get().filter(t=>t.correct!==undefined).values();
       const acc = all.filter(t=>t.correct).length / all.length;
-      // D-score: difference of means / pooled SD
       const d4 = jsPsych.data.get().filter({block:4,correct:true}).select('rt').values;
       const d7 = jsPsych.data.get().filter({block:7,correct:true}).select('rt').values;
       const clean = arr=>arr.filter(rt=>rt>=300 && rt<=10000);
