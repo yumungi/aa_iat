@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Alopecia IAT</title>
-  <!-- jsPsych CSS (browser-ready bundle via jsDelivr) -->
+  <!-- jsPsych CSS (browser-ready) -->
   <link
     href="https://cdn.jsdelivr.net/npm/jspsych@7.3.0/dist/css/jspsych.css"
     rel="stylesheet"
@@ -13,35 +13,35 @@
 </head>
 <body></body>
 
-<!-- jsPsych core & plugins (browser-ready bundles via jsDelivr) -->
-<script src="https://cdn.jsdelivr.net/npm/jspsych@7.3.0/dist/jspsych.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspsych@7.3.0/dist/plugins/jspsych-html-button-response.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspsych@7.3.0/dist/plugins/jspsych-html-keyboard-response.js"></script>
+<!-- jsPsych core (browser UMD bundle) -->
+<script src="https://cdn.jsdelivr.net/npm/jspsych@7.3.0/dist/index.browser.min.js"></script>
+<!-- Plugins (UMD bundles) -->
+<script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-button-response@1.2.0/dist/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jspsych/plugin-html-keyboard-response@1.1.3/dist/index.umd.js"></script>
 <!-- Hammer.js for swipe detection -->
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 
 <script>
 (async function(){
-  // Initialize
   const jsPsych = initJsPsych();
 
-  // Google Apps Script endpoint
+  // Your Apps Script URL
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw1KZCy_46ZFKajTjZdYH4hRr3Gz0moetyIeYpCBQRe8s15UMrwt3znAsmhzomfN8D7/exec";
 
   // Stimuli
   const alopeciaImages = Array.from({length:5},(_,i)=>`alopecia-${i+1}.jpg`);
-  const hairImages    = Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`);
-  const goodWords     = ["Friend","Together","Trusted","Familiar","Safe","Accepted","Family","Included"];
-  const badWords      = ["Stranger","Isolated","Weird","Rejected","Different","Excluded","Awkward","Them"];
+  const hairImages     = Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`);
+  const goodWords      = ["Friend","Together","Trusted","Familiar","Safe","Accepted","Family","Included"];
+  const badWords       = ["Stranger","Isolated","Weird","Rejected","Different","Excluded","Awkward","Them"];
 
-  // Helpers to build trials
+  // Helpers
   const makeImageTrials = (arr,correct) =>
     arr.map(fn=>({stimulus:`<img src="${fn}" style="max-width:80vw;max-height:60vh;">`, correct}));
   const makeWordTrials  = (arr,correct) =>
     arr.map(w=>({stimulus:`<p style="font-size:2em;">${w}</p>`, correct}));
   function repeat(arr,times){ return Array(times).fill(arr).flat(); }
 
-  // Build each block’s trials
+  // Build trial sets
   const block1Trials = jsPsych.randomization.shuffle(
     repeat(
       makeImageTrials(alopeciaImages,'left')
@@ -72,7 +72,7 @@
   );
   const block7Trials = jsPsych.randomization.shuffle(repeat(block6Trials,2));
 
-  // 1. Consent screen
+  // 1. Consent
   jsPsych.timeline.push({
     type: 'html-button-response',
     stimulus: `
@@ -80,5 +80,113 @@
       <p>This test measures unconscious bias toward people with alopecia areata.</p>
       <p>Swipe <strong>left</strong> or <strong>right</strong> to categorise each item.</p>
       <p>Click “I consent” to begin.</p>`,
-    choices: ['
+    choices: ['I do not consent','I consent'],
+    on_finish: d => {
+      if (d.response === 0) jsPsych.endExperiment('You chose not to participate.');
+    }
+  });
 
+  // 2. Participant ID
+  const participantID = jsPsych.randomization.randomID(8);
+  jsPsych.timeline.push({
+    type: 'html-button-response',
+    stimulus: `<p>Your participant ID is:</p><h3>${participantID}</h3>`,
+    choices: ['Start']
+  });
+
+  // 3. Block builder
+  function makeBlock(num, label, trials) {
+    // Instructions
+    jsPsych.timeline.push({
+      type: 'html-button-response',
+      stimulus: `<h3>Block ${num}</h3>
+        <p><strong>Left:</strong> ${label.left}<br><strong>Right:</strong> ${label.right}</p>`,
+      choices: ['Begin']
+    });
+
+    // Trials + feedback
+    jsPsych.timeline.push({
+      timeline: [
+        {
+          type: 'html-keyboard-response',
+          stimulus: jsPsych.timelineVariable('stimulus'),
+          choices: "NO_KEYS",
+          trial_duration: 10000,
+          data: {
+            participantID,
+            block: num,
+            correct_response: jsPsych.timelineVariable('correct')
+          },
+          on_start: trial => {
+            trial.startTime = Date.now();
+            if (!window.hammer) window.hammer = new Hammer(document.body);
+            trial.swipeFunc = e => {
+              const rt = Date.now() - trial.startTime;
+              const resp = e.type === 'swipeleft' ? 'left' : 'right';
+              const correct = resp === trial.data.correct_response;
+              window.hammer.off('swipeleft swiperight', trial.swipeFunc);
+              jsPsych.finishTrial({response: resp, rt, correct});
+            };
+            window.hammer.on('swipeleft swiperight', trial.swipeFunc);
+          }
+        },
+        {
+          timeline: [{
+            type: 'html-keyboard-response',
+            stimulus: '<div style="font-size:4em;color:red;">X</div>',
+            choices: [],
+            trial_duration: 500
+          }],
+          conditional_function: () => !jsPsych.data.get().last(1).values()[0].correct
+        }
+      ],
+      timeline_variables: trials,
+      randomize_order: true
+    });
+
+    // POST block data
+    jsPsych.timeline.push({
+      type: 'call-function',
+      func: () => {
+        const data = jsPsych.data.get().filter({block: num}).values();
+        fetch(WEB_APP_URL, {method: 'POST', body: JSON.stringify(data)});
+      }
+    });
+  }
+
+  // 4. Create all 7 blocks
+  makeBlock(1, {left:'Alopecia', right:'No Alopecia'},        block1Trials);
+  makeBlock(2, {left:'Good',     right:'Bad'},                block2Trials);
+  makeBlock(3, {left:'Alopecia+Good',   right:'NoAlopecia+Bad'}, block3Trials);
+  makeBlock(4, {left:'Alopecia+Good',   right:'NoAlopecia+Bad'}, block4Trials);
+  makeBlock(5, {left:'No Alopecia',     right:'Alopecia'},   block5Trials);
+  makeBlock(6, {left:'Good+NoAlopecia', right:'Bad+Alopecia'},  block6Trials);
+  makeBlock(7, {left:'Good+NoAlopecia', right:'Bad+Alopecia'},  block7Trials);
+
+  // 5. Debrief: accuracy & D-score
+  jsPsych.timeline.push({
+    type: 'html-button-response',
+    stimulus: () => {
+      const allTrials = jsPsych.data.get().filter(t => t.correct !== undefined).values();
+      const accuracy = allTrials.filter(t => t.correct).length / allTrials.length;
+      const rts4 = jsPsych.data.get().filter({block:4,correct:true}).select('rt').values;
+      const rts7 = jsPsych.data.get().filter({block:7,correct:true}).select('rt').values;
+      const clean = arr => arr.filter(rt => rt>=300 && rt<=10000);
+      const mean  = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+      const m4 = mean(clean(rts4)), m7 = mean(clean(rts7));
+      const pool = clean(rts4).concat(clean(rts7));
+      const sd   = Math.sqrt(pool.map(x=>Math.pow(x - (m4+m7)/2,2)).reduce((a,b)=>a+b,0)/pool.length);
+      const d    = (m7 - m4)/sd;
+      return `
+        <h2>All done!</h2>
+        <p>Accuracy: ${(accuracy*100).toFixed(1)}%</p>
+        <p>IAT D-score: ${d.toFixed(2)}</p>
+      `;
+    },
+    choices: ['Finish']
+  });
+
+  // 6. Start
+  jsPsych.run();
+})();
+</script>
