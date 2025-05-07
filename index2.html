@@ -72,8 +72,23 @@
     <div id="img-container"></div>
   </div>
 
-  <!-- Page 5: Thank you & Results -->
+  <!-- Page 5: Question 2 -->
   <div id="page5" class="screen">
+    <h2>Question 2</h2>
+    <div id="question2" style="font-size:1.5em; text-align:center; margin-bottom:1em;">Would you recommend this product?</div>
+    <button id="toPage6" class="btn">Begin Round 2</button>
+  </div>
+
+  <!-- Page 6: Images 2 -->
+  <div id="page6" class="screen">
+    <div id="label-container">
+      <span>Dislike</span><span>Like</span>
+    </div>
+    <div id="img-container"></div>
+  </div>
+
+  <!-- Page 7: Thank you & Results -->
+  <div id="page7" class="screen">
     <h2>Thank you for participating!</h2>
     <div id="results"></div>
   </div>
@@ -81,92 +96,69 @@
   <!-- Hammer.js for swipe -->
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <script>
+    const images = ['alopecia-1.jpg','alopecia-2.jpg','alopecia-3.jpg','alopecia-4.jpg','alopecia-5.jpg'];
+    const imagesRound2 = ['product-1.jpg', 'product-2.jpg', 'product-3.jpg', 'product-4.jpg', 'product-5.jpg'];
+    let loadedImages = 0, idx = 0, responses = [], startTime, currentImg, hamm;
+
     // Preload images
-    const images = [
-      'alopecia-1.jpg','alopecia-2.jpg','alopecia-3.jpg','alopecia-4.jpg','alopecia-5.jpg',
-      'hair-1.jpg','hair-2.jpg','hair-3.jpg','hair-4.jpg','hair-5.jpg'
-    ];
-    let loadedImages = 0;
-    images.forEach(src => {
+    [...images, ...imagesRound2].forEach(src => {
       const img = new Image(); img.src = src;
-      img.onload = () => {
-        loadedImages++;
-        if (loadedImages === images.length) {
-          document.getElementById('loading').style.display = 'none';
-          initSurvey();
-        }
-      };
+      img.onload = () => { loadedImages++; if (loadedImages === (images.length + imagesRound2.length)) initSurvey(); };
     });
 
-    // Page control
-    const pages=['page1','page2','page3','page4','page5'];
-    function showPage(i) { pages.forEach((id,idx)=>document.getElementById(id).classList.toggle('active', idx===i)); }
+    const pages = ['page1', 'page2', 'page3', 'page4', 'page5', 'page6', 'page7'];
+    function showPage(i) { pages.forEach((id, idx) => document.getElementById(id).classList.toggle('active', idx === i)); }
 
     function initSurvey() {
       showPage(0);
-      // Page1 logic
-      const consentCB=document.getElementById('consentCheckbox');
-      const sexSel=document.getElementById('sexSelect');
-      const ageInp=document.getElementById('ageInput');
-      const btn1=document.getElementById('toPage2');
-      function checkPage1(){ btn1.disabled=!(consentCB.checked && sexSel.value && ageInp.value); }
-      [consentCB, sexSel, ageInp].forEach(el=>el.addEventListener('input', checkPage1));
-      btn1.addEventListener('click', ()=> showPage(1));
-      document.getElementById('toPage3').addEventListener('click', ()=> showPage(2));
-      document.getElementById('toPage4').addEventListener('click', ()=>{ showPage(3); startExperiment(); });
+      document.getElementById('toPage2').addEventListener('click', () => showPage(1));
+      document.getElementById('toPage3').addEventListener('click', () => showPage(2));
+      document.getElementById('toPage4').addEventListener('click', () => { showPage(3); startExperiment(images, 'page5'); });
+      document.getElementById('toPage6').addEventListener('click', () => { showPage(5); startExperiment(imagesRound2, 'page7'); });
     }
 
-    // Experiment logic
-    let idx=0, responses=[], startTime, currentImg, hamm;
-    function startExperiment(){ idx=0; responses=[]; loadNext(); }
-
-    function createImage(src){
-      const img=new Image(); img.src=src; img.draggable=false;
-      img.style.position='absolute'; img.style.transition='transform 0.3s ease';
-      img.style.transform='translateX(0) rotate(0)'; return img;
+    function startExperiment(imageSet, nextPage) {
+      idx = 0; responses = []; loadNext(imageSet, nextPage);
     }
 
-    function bindSwipe(el){
-      hamm=new Hammer(el);
-      hamm.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 10 });
-      hamm.on('panmove', e=>{
-        el.style.transition='none';
-        el.style.transform=`translateX(${e.deltaX}px) rotate(${e.deltaX/20}deg)`;
-      });
-      hamm.on('panend', e=>{
-        const dt=Date.now()-startTime;
-        const dir=e.deltaX>0?'yes':'no';
-        if(Math.abs(e.deltaX)>100){
-          el.style.transition='transform 0.3s ease';
-          const off=dir==='yes'?window.innerWidth:-window.innerWidth;
-          el.style.transform=`translateX(${off}px) rotate(${dir==='yes'?45:-45}deg)`;
-          responses.push({ sex:document.getElementById('sexSelect').value,
-                            age:document.getElementById('ageInput').value,
-                            image:images[idx], response:dir, rt:dt });
-          setTimeout(()=>{ idx++; loadNext(); },300);
-        } else {
-          el.style.transition='transform 0.2s ease';
-          el.style.transform='translateX(0) rotate(0)';
-        }
-      });
-    }
-
-    function loadNext(){
-      const container=document.getElementById('img-container');
-      if(currentImg){ hamm.destroy(); container.removeChild(currentImg); }
-      if(idx>=images.length){ showPage(4); renderResults(); return; }
-      currentImg=createImage(images[idx]);
+    function loadNext(imageSet, nextPage) {
+      const container = document.getElementById('img-container');
+      if (currentImg) { hamm.destroy(); container.removeChild(currentImg); }
+      if (idx >= imageSet.length) { showPage(pages.indexOf(nextPage)); renderResults(); return; }
+      currentImg = createImage(imageSet[idx]);
       container.appendChild(currentImg);
-      bindSwipe(currentImg);
-      startTime=Date.now();
+      bindSwipe(currentImg, imageSet, nextPage);
+      startTime = Date.now();
     }
 
-    function renderResults(){
-      const resDiv=document.getElementById('results');
-      resDiv.innerHTML=`<p><b>Sex:</b> ${document.getElementById('sexSelect').value} | <b>Age:</b> ${document.getElementById('ageInput').value}</p>`;
-      const tbl=document.createElement('table');
-      const hdr=tbl.insertRow(); ['Image','Response','RT (ms)'].forEach(t=>{ const th=document.createElement('th'); th.textContent=t; hdr.appendChild(th); });
-      responses.forEach(r=>{ const row=tbl.insertRow(); [r.image,r.response,r.rt].forEach(v=>{ const c=row.insertCell(); c.textContent=v; }); });
+    function createImage(src) {
+      const img = new Image(); img.src = src; img.draggable = false;
+      img.style.position = 'absolute'; img.style.transition = 'transform 0.3s ease';
+      img.style.transform = 'translateX(0) rotate(0)'; return img;
+    }
+
+    function bindSwipe(el, imageSet, nextPage) {
+      hamm = new Hammer(el);
+      hamm.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 10 });
+      hamm.on('panmove', e => { el.style.transition = 'none'; el.style.transform = `translateX(${e.deltaX}px) rotate(${e.deltaX / 20}deg)`; });
+      hamm.on('panend', e => {
+        const dt = Date.now() - startTime;
+        const dir = e.deltaX > 0 ? 'yes' : 'no';
+        if (Math.abs(e.deltaX) > 100) {
+          el.style.transition = 'transform 0.3s ease';
+          el.style.transform = `translateX(${dir === 'yes' ? window.innerWidth : -window.innerWidth}px) rotate(${dir === 'yes' ? 45 : -45}deg)`;
+          responses.push({ image: imageSet[idx], response: dir, rt: dt });
+          setTimeout(() => { idx++; loadNext(imageSet, nextPage); }, 300);
+        } else { el.style.transition = 'transform 0.2s ease'; el.style.transform = 'translateX(0) rotate(0)'; }
+      });
+    }
+
+    function renderResults() {
+      const resDiv = document.getElementById('results');
+      resDiv.innerHTML = '<h3>Survey Results</h3>';
+      const tbl = document.createElement('table');
+      const hdr = tbl.insertRow(); ['Image', 'Response', 'RT (ms)'].forEach(t => { const th = document.createElement('th'); th.textContent = t; hdr.appendChild(th); });
+      responses.forEach(r => { const row = tbl.insertRow(); [r.image, r.response, r.rt].forEach(v => { const c = row.insertCell(); c.textContent = v; }); });
       resDiv.appendChild(tbl);
     }
   </script>
