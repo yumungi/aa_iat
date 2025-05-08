@@ -4,42 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Swipe‑Based Survey</title>
-  <!-- Hammer.js for touch / drag detection -->
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <style>
     :root { font-family: system-ui, Arial, sans-serif; }
-    body {
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f9fafb;
-    }
-    .page { display: none; width: 100%; max-width: 420px; padding: 1.5rem; box-sizing: border-box; }
-    .active { display: block; }
-    h1, h2 { text-align: center; margin-top: 0; }
-    label { display: block; margin: 0.5rem 0 0.25rem; }
-    input[type="text"], select {
-      width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;
-    }
-    .btn {
-      display: inline-block; background: #2563eb; color: #fff; padding: 0.6rem 1.2rem;
-      border-radius: 6px; cursor: pointer; border: none; margin: 1rem auto 0; text-align: center;
-    }
-    .image-wrapper { position: relative; width: 100%; height: 420px; margin-top: 0.5rem; overflow: hidden; }
-    .image-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; touch-action: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #e5e7eb; padding: 0.4rem; font-size: 0.875rem; text-align: center; }
+    body { margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#f9fafb; transition: box-shadow 0.2s ease; }
+    /* Edge colour feedback */
+    body.edge-left  { box-shadow: inset 0 0 0 12px rgba(239,68,68,.85); }
+    body.edge-right { box-shadow: inset 0 0 0 12px rgba(34,197,94,.85); }
+
+    .page { display:none; width:100%; max-width:420px; padding:1.5rem; box-sizing:border-box; }
+    .active{ display:block; }
+
+    h1,h2{ text-align:center; margin-top:0; }
+    label{ display:block; margin:.5rem 0 .25rem; }
+    input[type="text"],select{ width:100%; padding:.5rem; border:1px solid #d1d5db; border-radius:6px; }
+    .btn{ display:inline-block; background:#2563eb; color:#fff; padding:.6rem 1.2rem; border-radius:6px; cursor:pointer; border:none; margin:1rem auto 0; text-align:center; }
+
+    .image-wrapper{ position:relative; width:100%; height:420px; margin-top:.5rem; overflow:hidden; }
+    .image-wrapper img{ width:100%; height:100%; object-fit:cover; border-radius:12px; touch-action:none; }
+
+    table{ width:100%; border-collapse:collapse; margin-top:1rem; }
+    th,td{ border:1px solid #e5e7eb; padding:.4rem; font-size:.875rem; text-align:center; }
+
+    /* Loading screen */
+    #loadingScreen{display:flex; flex-direction:column; justify-content:center; align-items:center;}
+    .loader{ width:64px; height:64px; border:8px solid #e5e7eb; border-top:8px solid #2563eb; border-radius:50%; animation:spin 1s linear infinite; }
+    @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
   </style>
 </head>
 <body>
+  <!-- Loading screen -->
+  <div id="loadingScreen" class="page active">
+    <div class="loader"></div>
+    <p id="progressText" style="margin-top:1rem; font-size:0.9rem;">Loading images…</p>
+  </div>
+
   <!-- Page 1 – Demographic + consent -->
-  <div id="page1" class="page active">
+  <div id="page1" class="page">
     <h1>Research Survey</h1>
     <p>Please answer the following:</p>
     <label for="age">Age</label>
     <input id="age" type="text" placeholder="Enter your age" />
+
     <label for="sex">Sex</label>
     <select id="sex">
       <option value="">Select…</option>
@@ -47,38 +53,44 @@
       <option value="Male">Male</option>
       <option value="Other">Other</option>
     </select>
-    <label><input id="consent" type="checkbox" /> I consent to participate in this anonymous study</label>
+
+    <label><input id="consent" type="checkbox"/> I consent to participate in this anonymous study</label>
     <button id="next1" class="btn">Next</button>
   </div>
+
   <!-- Page 2 – Instructions -->
   <div id="page2" class="page">
     <h2>Instructions</h2>
-    <p>You will be shown a question and a series of images.<br />
-      <strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br />
-      Your response time is important – please answer based on your gut feel. All results are completely anonymous.
-    </p>
+    <p>You will be shown a question and a series of images.<br>
+       <strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br>
+       Your response time is important – answer based on your gut feel. All results are completely anonymous.</p>
     <button id="next2" class="btn">Start</button>
   </div>
+
   <!-- Page 3 – Prompt 1 -->
   <div id="page3" class="page">
     <h2>I would like to be friends with this person</h2>
     <button id="beginSet1" class="btn">Show images</button>
   </div>
-  <!-- Page 4 – Image container for prompt 1 -->
+
+  <!-- Page 4 – Images for prompt 1 -->
   <div id="page4" class="page">
     <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img1" src="" alt="stimulus" /></div>
+    <div class="image-wrapper"><img id="img1" src="" alt="stimulus"></div>
   </div>
+
   <!-- Page 5 – Prompt 2 -->
   <div id="page5" class="page">
     <h2>I would like to work with this person</h2>
     <button id="beginSet2" class="btn">Show images</button>
   </div>
-  <!-- Page 6 – Image container for prompt 2 -->
+
+  <!-- Page 6 – Images for prompt 2 -->
   <div id="page6" class="page">
     <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img2" src="" alt="stimulus" /></div>
+    <div class="image-wrapper"><img id="img2" src="" alt="stimulus"></div>
   </div>
+
   <!-- Page 7 – Thank‑you & results -->
   <div id="page7" class="page">
     <h2>Thank you!</h2>
@@ -90,98 +102,101 @@
   </div>
 
 <script>
-  /* ---------- Utility ---------- */
-  const pages = ["page1","page2","page3","page4","page5","page6","page7"];
-  const showPage = idx => pages.forEach((id,i)=>document.getElementById(id).classList.toggle("active", i===idx));
-  const shuffle = a => {
-    for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;
-  };
+  /* ----- Core helpers ----- */
+  const pages=["page1","page2","page3","page4","page5","page6","page7"];
+  const showPage=i=>pages.forEach((id,idx)=>document.getElementById(id).classList.toggle('active',idx===i));
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
-  /* ---------- Stimulus lists ---------- */
-  const createImageList = () => shuffle([
-    ...Array.from({length:5},(_,i)=>`alopecia-${i+1}.jpg`),
-    ...Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`)
-  ]);
-  let list1=[],list2=[],idx1=0,idx2=0,startTime=0;
-  const results=[];
+  /* ----- Preload images ----- */
+  const allImages=[...Array.from({length:5},(_,i)=>`alopecia-${i+1}.jpg`),...Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`)];
+  const progressTxt=document.getElementById('progressText');
+  const preload=()=>new Promise(res=>{
+    let loaded=0;
+    allImages.forEach(src=>{
+      const img=new Image();
+      img.onload=img.onerror=()=>{ loaded++; progressTxt.textContent=`Loading ${loaded}/${allImages.length}`; if(loaded===allImages.length) res(); };
+      img.src=src;
+    });
+  });
 
-  /* ---------- Drag / swipe handler ---------- */
-  const addDragHandler = (imgEl,promptIdx) => {
-    const mc = new Hammer(imgEl);
-    mc.get('pan').set({direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0});
+  /* ----- Stimulus generation ----- */
+  const makeList=()=>shuffle(allImages.slice());
+  let list1=[],list2=[],idx1=0,idx2=0,startT=0; const results=[];
 
-    mc.on('panmove', ev=>{
-      imgEl.style.transform=`translateX(${ev.deltaX}px)`;
+  /* ----- Drag / swipe logic ----- */
+  const addDrag=(imgEl,pIdx)=>{
+    const mc=new Hammer(imgEl);
+    mc.get('pan').set({direction:Hammer.DIRECTION_HORIZONTAL,threshold:0});
+
+    mc.on('panmove',ev=>{
+      imgEl.style.transform=`translate(${ev.deltaX}px, ${-Math.abs(ev.deltaX)*0.2}px) rotate(${ev.deltaX*0.05}deg)`;
+      if(ev.deltaX>0){document.body.classList.add('edge-right');document.body.classList.remove('edge-left');}
+      else if(ev.deltaX<0){document.body.classList.add('edge-left');document.body.classList.remove('edge-right');}
     });
 
-    mc.on('panend', ev=>{
-      const thresh = 80; // px
-      if(Math.abs(ev.deltaX) < thresh){
+    mc.on('panend',ev=>{
+      document.body.classList.remove('edge-left','edge-right');
+      const thresh=80;
+      if(Math.abs(ev.deltaX)<thresh){
         imgEl.style.transition='transform 0.25s ease';
-        imgEl.style.transform='translateX(0)';
-        imgEl.addEventListener('transitionend',()=>{imgEl.style.transition='';},{once:true});
+        imgEl.style.transform='translate(0,0)';
+        imgEl.addEventListener('transitionend',()=>imgEl.style.transition='',{once:true});
         return;
       }
-      const agree = ev.deltaX>0; // right = agree
-      const dirStr = agree ? 'agree':'disagree';
-      const rt = Math.round(performance.now()-startTime);
-      results.push({prompt: promptIdx===1?'Friends':'Work',image: imgEl.src.split('/').pop(),direction:dirStr,rt});
-      const finalX = agree ? window.innerWidth : -window.innerWidth;
-      imgEl.style.transition='transform 0.35s ease';
-      imgEl.style.transform=`translateX(${finalX}px)`;
-      imgEl.addEventListener('transitionend',()=>{
-        imgEl.style.transition='';
-        imgEl.style.transform='translateX(0)';
-        loadNextImage(promptIdx);
-      },{once:true});
+      const agree=ev.deltaX>0; const dir=agree?'agree':'disagree';
+      const rt=Math.round(performance.now()-startT);
+      results.push({prompt:pIdx===1?'Friends':'Work',image:imgEl.src.split('/').pop(),direction:dir,rt});
+      const finalX=agree?window.innerWidth:-window.innerWidth;
+      imgEl.style.transition='transform 0.45s ease';
+      imgEl.style.transform=`translate(${finalX}px, -${window.innerHeight*0.4}px) rotate(${agree?40:-40}deg)`;
+      imgEl.addEventListener('transitionend',()=>{imgEl.style.transition='';imgEl.style.transform='translate(0,0)';loadNext(pIdx);},{once:true});
     });
   };
 
-  /* ---------- Image progression ---------- */
-  const loadNextImage = promptIdx => {
-    if(promptIdx===1){
+  /* ----- Progression ----- */
+  const loadNext=pIdx=>{
+    if(pIdx===1){
       idx1++;
-      if(idx1>=list1.length){ showPage(4); return; } // go to Prompt 2 (page5 index 4)
-      const img=document.getElementById('img1');
-      img.src=list1[idx1]; startTime=performance.now();
+      if(idx1>=list1.length){showPage(4);return;}
+      const img=document.getElementById('img1'); img.src=list1[idx1]; startT=performance.now();
     }else{
       idx2++;
-      if(idx2>=list2.length){ finish(); return; }
-      const img=document.getElementById('img2');
-      img.src=list2[idx2]; startTime=performance.now();
+      if(idx2>=list2.length){finish();return;}
+      const img=document.getElementById('img2'); img.src=list2[idx2]; startT=performance.now();
     }
   };
 
-  /* ---------- Finish ---------- */
-  const finish = () => {
+  /* ----- Finish + results display ----- */
+  const finish=()=>{
     const tbody=document.querySelector('#resultsTbl tbody');
-    results.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`;
-      tbody.appendChild(tr);
-    });
-    showPage(6); // page7 index 6
+    results.forEach(r=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`; tbody.appendChild(tr);});
+    showPage(6);
   };
 
-  /* ---------- Buttons ---------- */
-  document.getElementById('next1').addEventListener('click',()=>{
-    if(!document.getElementById('consent').checked){alert('Consent is required to proceed.');return;}
-    showPage(1);
-  });
-  document.getElementById('next2').addEventListener('click',()=>showPage(2));
+  /* ----- Button hooks ----- */
+  const initButtons=()=>{
+    document.getElementById('next1').addEventListener('click',()=>{
+      if(!document.getElementById('consent').checked){alert('Consent is required to proceed.');return;}
+      showPage(1);
+    });
+    document.getElementById('next2').addEventListener('click',()=>showPage(2));
 
-  document.getElementById('beginSet1').addEventListener('click',()=>{
-    list1=createImageList(); idx1=0;
-    const img=document.getElementById('img1'); img.src=list1[idx1]; startTime=performance.now();
-    addDragHandler(img,1);
-    showPage(3);
-  });
+    document.getElementById('beginSet1').addEventListener('click',()=>{
+      list1=makeList(); idx1=0;
+      const img=document.getElementById('img1'); img.src=list1[idx1]; startT=performance.now(); addDrag(img,1); showPage(3);
+    });
 
-  document.getElementById('beginSet2').addEventListener('click',()=>{
-    list2=createImageList(); idx2=0;
-    const img=document.getElementById('img2'); img.src=list2[idx2]; startTime=performance.now();
-    addDragHandler(img,2);
-    showPage(5);
+    document.getElementById('beginSet2').addEventListener('click',()=>{
+      list2=makeList(); idx2=0;
+      const img=document.getElementById('img2'); img.src=list2[idx2]; startT=performance.now(); addDrag(img,2); showPage(5);
+    });
+  };
+
+  /* ----- Bootstrap ----- */
+  preload().then(()=>{
+    document.getElementById('loadingScreen').style.display='none';
+    showPage(0); // reveal demographic page
+    initButtons();
   });
 </script>
 </body>
