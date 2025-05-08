@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Lock zoom and vertical scroll on mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Swipe‑Based Survey</title>
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <style>
     :root { font-family: system-ui, Arial, sans-serif; }
-     /* Disable vertical scroll & overscroll bounce, keep horizontal pans */
+    /* Disable vertical scroll & overscroll bounce, keep horizontal pans */
     html,body{ height:100%; margin:0; overflow:hidden; touch-action:pan-x; overscroll-behavior:none; }
-    body{ display:flex; justify-content:center; align-items:center; background:#f9fafb; transition: box-shadow 0.2s ease; }
-    /* Edge colour feedback */
-    body.edge-left  { box-shadow: inset 0 0 0 12px rgba(239,68,68,.85); }
-    body.edge-right { box-shadow: inset 0 0 0 12px rgba(34,197,94,.85); }
+    body{
+      display:flex; justify-content:center; align-items:center;
+      background:#f9fafb; transition: background-color .25s ease;
+    }
+    /* Screen‑tint feedback */
+    body.tint-left  { background:rgba(239,68,68,0.25); }
+    body.tint-right { background:rgba(34,197,94,0.25); }
 
     .page { display:none; width:100%; max-width:420px; padding:1.5rem; box-sizing:border-box; }
     .active{ display:block; }
@@ -48,15 +51,8 @@
     <p>Please answer the following:</p>
     <label for="age">Age</label>
     <input id="age" type="text" placeholder="Enter your age" />
-
     <label for="sex">Sex</label>
-    <select id="sex">
-      <option value="">Select…</option>
-      <option value="Female">Female</option>
-      <option value="Male">Male</option>
-      <option value="Other">Other</option>
-    </select>
-
+    <select id="sex"><option value="">Select…</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select>
     <label><input id="consent" type="checkbox"/> I consent to participate in this anonymous study</label>
     <button id="next1" class="btn">Next</button>
   </div>
@@ -64,47 +60,30 @@
   <!-- Page 2 – Instructions -->
   <div id="page2" class="page">
     <h2>Instructions</h2>
-    <p>You will be shown a question and a series of images.<br>
-       <strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br>
-       Your response time is important – answer based on your gut feel. All results are completely anonymous.</p>
+    <p>You will be shown a question and a series of images.<br><strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br>Your response time is important – answer based on your gut feel. All results are completely anonymous.</p>
     <button id="next2" class="btn">Start</button>
   </div>
 
   <!-- Page 3 – Prompt 1 -->
-  <div id="page3" class="page">
-    <h2>I would like to be friends with this person</h2>
-    <button id="beginSet1" class="btn">Show images</button>
-  </div>
+  <div id="page3" class="page"><h2>I would like to be friends with this person</h2><button id="beginSet1" class="btn">Show images</button></div>
 
   <!-- Page 4 – Images for prompt 1 -->
-  <div id="page4" class="page">
-    <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img1" src="" alt="stimulus"></div>
-  </div>
+  <div id="page4" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img1" src="" alt="stimulus"></div></div>
 
   <!-- Page 5 – Prompt 2 -->
-  <div id="page5" class="page">
-    <h2>I would like to work with this person</h2>
-    <button id="beginSet2" class="btn">Show images</button>
-  </div>
+  <div id="page5" class="page"><h2>I would like to work with this person</h2><button id="beginSet2" class="btn">Show images</button></div>
 
   <!-- Page 6 – Images for prompt 2 -->
-  <div id="page6" class="page">
-    <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img2" src="" alt="stimulus"></div>
-  </div>
+  <div id="page6" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img2" src="" alt="stimulus"></div></div>
 
-  <!-- Page 7 – Thank‑you & results -->
-  <div id="page7" class="page">
-    <h2>Thank you!</h2>
-    <p>Your responses have been recorded.</p>
-    <table id="resultsTbl">
-      <thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <!-- Page 7 – Thank-you & results -->
+  <div id="page7" class="page"><h2>Thank you!</h2><p>Your responses have been recorded.</p><table id="resultsTbl"><thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th></tr></thead><tbody></tbody></table></div>
 
 <script>
+  /* ----- Configurable constants ----- */
+  const TINT_HOLD_MS = 200; // duration (ms) to keep tint after swipe ends
+  const SWIPE_THRESHOLD = 80; // px before card is accepted
+
   /* ----- Core helpers ----- */
   const pages=["page1","page2","page3","page4","page5","page6","page7"];
   const showPage=i=>pages.forEach((id,idx)=>document.getElementById(id).classList.toggle('active',idx===i));
@@ -113,34 +92,28 @@
   /* ----- Preload images ----- */
   const allImages=[...Array.from({length:5},(_,i)=>`alopecia-${i+1}.jpg`),...Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`)];
   const progressTxt=document.getElementById('progressText');
-  const preload=()=>new Promise(res=>{
-    let loaded=0;
-    allImages.forEach(src=>{
-      const img=new Image();
-      img.onload=img.onerror=()=>{ loaded++; progressTxt.textContent=`Loading ${loaded}/${allImages.length}`; if(loaded===allImages.length) res(); };
-      img.src=src;
-    });
-  });
+  const preload=()=>new Promise(res=>{let loaded=0;allImages.forEach(src=>{const img=new Image();img.onload=img.onerror=()=>{loaded++;progressTxt.textContent=`Loading ${loaded}/${allImages.length}`;if(loaded===allImages.length)res();};img.src=src;});});
 
   /* ----- Stimulus generation ----- */
   const makeList=()=>shuffle(allImages.slice());
   let list1=[],list2=[],idx1=0,idx2=0,startT=0; const results=[];
 
   /* ----- Drag / swipe logic ----- */
-  const addDrag=(imgEl,pIdx)=>{
+  function addDrag(imgEl,pIdx){
     const mc=new Hammer(imgEl);
     mc.get('pan').set({direction:Hammer.DIRECTION_HORIZONTAL,threshold:0});
 
     mc.on('panmove',ev=>{
       imgEl.style.transform=`translate(${ev.deltaX}px, ${-Math.abs(ev.deltaX)*0.2}px) rotate(${ev.deltaX*0.05}deg)`;
-      if(ev.deltaX>0){document.body.classList.add('edge-right');document.body.classList.remove('edge-left');}
-      else if(ev.deltaX<0){document.body.classList.add('edge-left');document.body.classList.remove('edge-right');}
+      if(ev.deltaX>0){document.body.classList.add('tint-right');document.body.classList.remove('tint-left');}
+      else if(ev.deltaX<0){document.body.classList.add('tint-left');document.body.classList.remove('tint-right');}
     });
 
     mc.on('panend',ev=>{
-      document.body.classList.remove('edge-left','edge-right');
-      const thresh=80;
-      if(Math.abs(ev.deltaX)<thresh){
+      // Clear tint after hold interval
+      setTimeout(()=>document.body.classList.remove('tint-left','tint-right'),TINT_HOLD_MS);
+
+      if(Math.abs(ev.deltaX)<SWIPE_THRESHOLD){
         imgEl.style.transition='transform 0.25s ease';
         imgEl.style.transform='translate(0,0)';
         imgEl.addEventListener('transitionend',()=>imgEl.style.transition='',{once:true});
@@ -152,12 +125,16 @@
       const finalX=agree?window.innerWidth:-window.innerWidth;
       imgEl.style.transition='transform 0.45s ease';
       imgEl.style.transform=`translate(${finalX}px, -${window.innerHeight*0.4}px) rotate(${agree?40:-40}deg)`;
-      imgEl.addEventListener('transitionend',()=>{imgEl.style.transition='';imgEl.style.transform='translate(0,0)';loadNext(pIdx);},{once:true});
+      imgEl.addEventListener('transitionend',()=>{
+        imgEl.style.transition='';
+        imgEl.style.transform='translate(0,0)';
+        loadNext(pIdx);
+      },{once:true});
     });
-  };
+  }
 
-  /* ----- Progression ----- */
-  const loadNext=pIdx=>{
+  /* ----- Progression functions ----- */
+  function loadNext(pIdx){
     if(pIdx===1){
       idx1++;
       if(idx1>=list1.length){showPage(4);return;}
@@ -167,14 +144,19 @@
       if(idx2>=list2.length){finish();return;}
       const img=document.getElementById('img2'); img.src=list2[idx2]; startT=performance.now();
     }
-  };
+  }
 
-  /* ----- Finish + results display ----- */
-  const finish=()=>{
+  /* ----- Finish ----- */
+  function finish(){
     const tbody=document.querySelector('#resultsTbl tbody');
-    results.forEach(r=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`; tbody.appendChild(tr);});
+    results.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`;
+      tbody.appendChild(tr);
+    });
     showPage(6);
-  };
+  }
+
 
   /* ----- Button hooks ----- */
   const initButtons=()=>{
