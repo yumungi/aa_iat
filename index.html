@@ -78,25 +78,16 @@
   <!-- Page 6 – Images for prompt 2 -->
   <div id="page6" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img2" src="" alt="stimulus"></div></div>
 
-    <!-- Page 7 Familiarity question -->
-  <div id="page7" class="page">
-    <h2>How familiar are you with Alopecia Areata?</h2>
-    <select id="famSelect" style="width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px">
-      <option value="">Select…</option>
-      <option>I have never heard of alopecia areata</option>
-      <option>I have heard of alopecia areata, but am not too familiar with it</option>
-      <option>I am familiar with alopecia areata</option>
-      <option>I know someone with alopecia areata</option>
-    </select>
-    <button id="famNext" class="btn">Submit</button>
-  </div>
-
-  <!-- Page 8 Results -->
-  <div id="page8" class="page"><h2>Thank you!</h2><p>Your responses have been recorded.</p><table id="resultsTbl"><thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th><th>Age</th><th>Sex</th><th>Year Level</th><th>Familiarity</th></tr></thead><tbody></tbody></table></div>
+  <!-- Page 7 – Thank-you & results -->
+  <div id="page7" class="page"><h2>Thank you!</h2><p>Your responses have been recorded.</p><table id="resultsTbl"><thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th></tr></thead><tbody></tbody></table></div>
 
 <script>
-  const TINT_HOLD_MS=600,SWIPE_THRESHOLD=80;
-  const pages=["page1","page2","page3","page4","page5","page6","page7","page8"];
+  /* ----- Configurable constants ----- */
+  const TINT_HOLD_MS = 200; // duration (ms) to keep tint after swipe ends
+  const SWIPE_THRESHOLD = 80; // px before card is accepted
+
+  /* ----- Core helpers ----- */
+  const pages=["page1","page2","page3","page4","page5","page6","page7"];
   const showPage=i=>pages.forEach((id,idx)=>document.getElementById(id).classList.toggle('active',idx===i));
   const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
@@ -108,8 +99,6 @@
   /* ----- Stimulus generation ----- */
   const makeList=()=>shuffle(allImages.slice());
   let list1=[],list2=[],idx1=0,idx2=0,startT=0; const results=[];
-  const results=[];
-  const demo={age:'',sex:'',familiarity:''};
 
   /* ----- Drag / swipe logic ----- */
   function addDrag(imgEl,pIdx){
