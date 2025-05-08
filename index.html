@@ -2,162 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Lock zoom and vertical scroll on mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Swipe‑Based Survey</title>
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <style>
-    :root { font-family: system-ui, Arial, sans-serif; }
-    /* Disable vertical scroll & overscroll bounce, keep horizontal pans */
-    html,body{ height:100%; margin:0; overflow:hidden; touch-action:pan-x; overscroll-behavior:none; }
-    body{
-      display:flex; justify-content:center; align-items:center;
-      background:#f9fafb; transition: background-color .25s ease;
-    }
-    /* Screen‑tint feedback */
-    body.tint-left  { background:rgba(239,68,68,0.25); }
-    body.tint-right { background:rgba(34,197,94,0.25); }
-
-    .page { display:none; width:100%; max-width:420px; padding:1.5rem; box-sizing:border-box; }
-    .active{ display:block; }
-
-    h1,h2{ text-align:center; margin-top:0; }
-    label{ display:block; margin:.5rem 0 .25rem; }
-    input[type="text"],select{ width:100%; padding:.5rem; border:1px solid #d1d5db; border-radius:6px; }
-    .btn{ display:inline-block; background:#2563eb; color:#fff; padding:.6rem 1.2rem; border-radius:6px; cursor:pointer; border:none; margin:1rem auto 0; text-align:center; }
-
-    .image-wrapper{ position:relative; width:100%; height:420px; margin-top:.5rem; overflow:hidden; }
-    .image-wrapper img{ width:100%; height:100%; object-fit:cover; border-radius:12px; touch-action:none; }
-
-    table{ width:100%; border-collapse:collapse; margin-top:1rem; }
-    th,td{ border:1px solid #e5e7eb; padding:.4rem; font-size:.875rem; text-align:center; }
-
-    /* Loading screen */
-    #loadingScreen{display:flex; flex-direction:column; justify-content:center; align-items:center;}
-    .loader{ width:64px; height:64px; border:8px solid #e5e7eb; border-top:8px solid #2563eb; border-radius:50%; animation:spin 1s linear infinite; }
-    @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+    :root{font-family:system-ui,Arial,sans-serif}
+    html,body{height:100%;margin:0;overflow:hidden;touch-action:pan-x;overscroll-behavior:none}
+    body{display:flex;justify-content:center;align-items:center;background:#f9fafb;transition:background-color .25s}
+    body.tint-left{background:rgba(239,68,68,.25)}
+    body.tint-right{background:rgba(34,197,94,.25)}
+    .page{display:none;width:100%;max-width:420px;padding:1.5rem;box-sizing:border-box}
+    .active{display:block}
+    h1,h2{text-align:center;margin-top:0}
+    label{display:block;margin:.5rem 0 .25rem}
+    input[type=text],select{width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px}
+    .btn{display:inline-block;background:#2563eb;color:#fff;padding:.6rem 1.2rem;border-radius:6px;cursor:pointer;border:none;margin:1rem auto 0;text-align:center}
+    .image-wrapper{position:relative;width:100%;height:420px;margin-top:.5rem;overflow:hidden}
+    .image-wrapper img{width:100%;height:100%;object-fit:cover;border-radius:12px;touch-action:none}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{border:1px solid #e5e7eb;padding:.4rem;font-size:.8rem;text-align:center}
+    #loadingScreen{display:flex;flex-direction:column;justify-content:center;align-items:center}
+    .loader{width:64px;height:64px;border:8px solid #e5e7eb;border-top:8px solid #2563eb;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
-  <!-- Loading screen -->
-  <div id="loadingScreen" class="page active">
-    <div class="loader"></div>
-    <p id="progressText" style="margin-top:1rem; font-size:0.9rem;">Loading images…</p>
-  </div>
+  <!-- Loading -->
+  <div id="loadingScreen" class="page active"><div class="loader"></div><p id="progressText" style="margin-top:1rem;font-size:.9rem">Loading images…</p></div>
 
-  <!-- Page 1 – Demographic + consent -->
+  <!-- Page1 Demographics -->
   <div id="page1" class="page">
     <h1>Research Survey</h1>
     <p>Please answer the following:</p>
-    <label for="age">Age</label>
-    <input id="age" type="text" placeholder="Enter your age" />
-    <label for="Gender">Gender</label>
-    <select id="Gender"><option value="">Select…</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select>
-    <label for="Year Level">Year Level</label>
-    <select id="Year Level"><option value="">Select…</option><option value="MD1">MD1</option><option value="MD2">MD2</option><option value="MD3">MD3</option><option value="MD4">MD4</option><option value="Other">Other</option></select>
-    <label><input id="consent" type="checkbox"/> I consent to participate in this anonymous study</label>
+    <label for="age">Age</label><input id="age" type="text" placeholder="Enter your age">
+    <label for="genderSel">Gender</label>
+    <select id="genderSel"><option value="">Select…</option><option>Female</option><option>Male</option><option>Other</option></select>
+    <label for="yearSel">Year Level</label>
+    <select id="yearSel"><option value="">Select…</option><option>MD1</option><option>MD2</option><option>MD3</option><option>MD4</option><option>Other</option></select>
+    <label><input id="consent" type="checkbox"> I consent to participate in this anonymous study</label>
     <button id="next1" class="btn">Next</button>
   </div>
 
-  <!-- Page 2 – Instructions -->
-  <div id="page2" class="page">
-    <h2>Instructions</h2>
-    <p>You will be shown a question and a series of images.<br><strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br>Your response time is important – answer based on your gut feel. All results are completely anonymous.</p>
-    <button id="next2" class="btn">Start</button>
-  </div>
+  <!-- Page2 Instructions -->
+  <div id="page2" class="page"><h2>Instructions</h2><p>You will be shown a question and a series of images.<br><strong>Swipe right</strong> if you <strong>agree</strong> and <strong>swipe left</strong> if you <strong>disagree</strong>.<br>Your response time is important – answer based on your gut feel. All results are completely anonymous.</p><button id="next2" class="btn">Start</button></div>
 
-  <!-- Page 3 – Prompt 1 -->
-  <div id="page3" class="page"><h2>This person appears likeable (Left = disagree, Right = agree) - example</h2><button id="beginSet1" class="btn">Show images</button></div>
+  <!-- Page3 Prompt 1 -->
+  <div id="page3" class="page"><h2>This person appears likeable (Left = disagree, Right = agree)</h2><button id="beginSet1" class="btn">Show images</button></div>
 
-  <!-- Page 4 – Images for prompt 1 -->
-  <div id="page4" class="page"><h2>Swipe to respond (Left = agree; Right = disagree)</h2><div class="image-wrapper"><img id="img1" src="" alt="stimulus"></div></div>
+  <!-- Page4 Images set1 -->
+  <div id="page4" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img1" src="" alt="stimulus"></div></div>
 
-  <!-- Page 5 – Prompt 2 -->
-  <div id="page5" class="page"><h2>I feel slightly uncomfortable looking at this person (placeholder)</h2><button id="beginSet2" class="btn">Show images</button></div>
+  <!-- Page5 Prompt 2 -->
+  <div id="page5" class="page"><h2>I feel slightly uncomfortable looking at this person</h2><button id="beginSet2" class="btn">Show images</button></div>
 
-  <!-- Page 6 – Images for prompt 2 -->
+  <!-- Page6 Images set2 -->
   <div id="page6" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img2" src="" alt="stimulus"></div></div>
 
-  <!-- Page 7 – Thank-you & results -->
-  <div id="page7" class="page"><h2>Thank you!</h2><p>Your responses have been recorded.</p><table id="resultsTbl"><thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th></tr></thead><tbody></tbody></table></div>
+  <!-- Page7 Familiarity -->
+  <div id="page7" class="page">
+    <h2>How familiar are you with Alopecia Areata?</h2>
+    <select id="famSel" style="width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px">
+      <option value="">Select…</option>
+      <option>I have never heard of alopecia areata</option>
+      <option>I have heard of alopecia areata, but am not too familiar with it</option>
+      <option>I am familiar with alopecia areata</option>
+      <option>I know someone with alopecia areata</option>
+    </select>
+    <button id="famNext" class="btn">Submit</button>
+  </div>
+
+  <!-- Page8 Results -->
+  <div id="page8" class="page"><h2>Thank you!</h2><p>Your responses have been recorded.</p><table id="resultsTbl"><thead><tr><th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th><th>Age</th><th>Gender</th><th>Year</th><th>Familiarity</th></tr></thead><tbody></tbody></table></div>
 
 <script>
-  /* ----- Configurable constants ----- */
-  const TINT_HOLD_MS = 200; // duration (ms) to keep tint after swipe ends
-  const SWIPE_THRESHOLD = 80; // px before card is accepted
-
-  /* ----- Core helpers ----- */
-  const pages=["page1","page2","page3","page4","page5","page6","page7"];
+  const TINT_HOLD_MS=200,SWIPE_THRESHOLD=80;
+  const pages=["page1","page2","page3","page4","page5","page6","page7","page8"];
   const showPage=i=>pages.forEach((id,idx)=>document.getElementById(id).classList.toggle('active',idx===i));
-  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
-
-  /* ----- Preload images ----- */
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
   const allImages=[...Array.from({length:5},(_,i)=>`alopecia-${i+1}.jpg`),...Array.from({length:5},(_,i)=>`hair-${i+1}.jpg`)];
   const progressTxt=document.getElementById('progressText');
   const preload=()=>new Promise(res=>{let loaded=0;allImages.forEach(src=>{const img=new Image();img.onload=img.onerror=()=>{loaded++;progressTxt.textContent=`Loading ${loaded}/${allImages.length}`;if(loaded===allImages.length)res();};img.src=src;});});
 
-  /* ----- Stimulus generation ----- */
   const makeList=()=>shuffle(allImages.slice());
-  let list1=[],list2=[],idx1=0,idx2=0,startT=0; const results=[];
+  let list1=[],list2=[],idx1=0,idx2=0,startT=0;
+  const results=[];
+  const demo={age:'',gender:'',year:'',fam:''};
 
-  /* ----- Drag / swipe logic ----- */
   function addDrag(imgEl,pIdx){
-    const mc=new Hammer(imgEl);
-    mc.get('pan').set({direction:Hammer.DIRECTION_HORIZONTAL,threshold:0});
-
-    mc.on('panmove',ev=>{
-      imgEl.style.transform=`translate(${ev.deltaX}px, ${-Math.abs(ev.deltaX)*0.2}px) rotate(${ev.deltaX*0.05}deg)`;
-      if(ev.deltaX>0){document.body.classList.add('tint-right');document.body.classList.remove('tint-left');}
-      else if(ev.deltaX<0){document.body.classList.add('tint-left');document.body.classList.remove('tint-right');}
-    });
-
-    mc.on('panend',ev=>{
-      // Clear tint after hold interval
-      setTimeout(()=>document.body.classList.remove('tint-left','tint-right'),TINT_HOLD_MS);
-
-      if(Math.abs(ev.deltaX)<SWIPE_THRESHOLD){
-        imgEl.style.transition='transform 0.25s ease';
-        imgEl.style.transform='translate(0,0)';
-        imgEl.addEventListener('transitionend',()=>imgEl.style.transition='',{once:true});
-        return;
-      }
-      const agree=ev.deltaX>0; const dir=agree?'agree':'disagree';
-      const rt=Math.round(performance.now()-startT);
-      results.push({prompt:pIdx===1?'Friends':'Work',image:imgEl.src.split('/').pop(),direction:dir,rt});
-      const finalX=agree?window.innerWidth:-window.innerWidth;
-      imgEl.style.transition='transform 0.45s ease';
-      imgEl.style.transform=`translate(${finalX}px, -${window.innerHeight*0.4}px) rotate(${agree?40:-40}deg)`;
-      imgEl.addEventListener('transitionend',()=>{
-        imgEl.style.transition='';
-        imgEl.style.transform='translate(0,0)';
-        loadNext(pIdx);
-      },{once:true});
-    });
+    const mc=new Hammer(imgEl);mc.get('pan').set({direction:Hammer.DIRECTION_HORIZONTAL,threshold:0});
+    mc.on('panmove',ev=>{imgEl.style.transform=`translate(${ev.deltaX}px,${-Math.abs(ev.deltaX)*.2}px) rotate(${ev.deltaX*.05}deg)`;if(ev.deltaX>0){document.body.classList.add('tint-right');document.body.classList.remove('tint-left')}else if(ev.deltaX<0){document.body.classList.add('tint-left');document.body.classList.remove('tint-right')}});
+    mc.on('panend',ev=>{setTimeout(()=>document.body.classList.remove('tint-left','tint-right'),TINT_HOLD_MS);if(Math.abs(ev.deltaX)<SWIPE_THRESHOLD){imgEl.style.transition='transform .25s';imgEl.style.transform='translate(0,0)';imgEl.addEventListener('transitionend',()=>imgEl.style.transition='',{once:true});return;}const agree=ev.deltaX>0;const rt=Math.round(performance.now()-startT);results.push({prompt:pIdx===1?'Prompt1':'Prompt2',image:imgEl.src.split('/').pop(),direction:agree?'agree':'disagree',rt});const finalX=agree?window.innerWidth:-window.innerWidth;imgEl.style.transition='transform .45s';imgEl.style.transform=`translate(${finalX}px,-${window.innerHeight*.4}px) rotate(${agree?40:-40}deg)`;imgEl.addEventListener('transitionend',()=>{imgEl.style.transition='';imgEl.style.transform='translate(0,0)';loadNext(pIdx)},{once:true})});
   }
 
-  /* ----- Progression functions ----- */
   function loadNext(pIdx){
-    if(pIdx===1){
-      idx1++;
-      if(idx1>=list1.length){showPage(4);return;}
-      const img=document.getElementById('img1'); img.src=list1[idx1]; startT=performance.now();
-    }else{
-      idx2++;
-      if(idx2>=list2.length){finish();return;}
-      const img=document.getElementById('img2'); img.src=list2[idx2]; startT=performance.now();
-    }
-  }
+    if(pIdx===1){idx1++;if(idx1>=list1.length){showPage(4);return;}const img=document.getElementById('img1');img.src=list1[idx1];startT=performance.now()}else{idx2++;if(idx2>=list2.length){showPage(6);return;}const img=document.getElementById('img2');img.src=list2[idx2];startT=performance.now()}}
 
-  /* ----- Finish ----- */
-  function finish(){
-    const tbody=document.querySelector('#resultsTbl tbody');
-    results.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`;
-      tbody.appendChild(tr);
-    });
-    showPage(6);
-  }
+  function finish(){const tbody=document.querySelector('#resultsTbl tbody');tbody.innerHTML='';results.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td><td>${demo.age}</td><td>${demo.gender}</td><td>${demo.year}</td><td>${demo.fam}</td>`;tbody.appendChild(tr)});showPage(7)}
 
 
   /* ----- Button hooks ----- */
