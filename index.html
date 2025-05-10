@@ -182,12 +182,15 @@ function nextImage(setIdx,imgEl){
   }
 }
 
-function upload(){
-  // fill familiarity into each row
-  swipes.forEach(r=>r.familiar=demo.fam);
+function upload() {
+  swipes.forEach(r => r.familiar = demo.fam);   // fill in familiarity
 
-  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({swipes})})
-    .finally(()=>show(10));
+  fetch(ENDPOINT, {
+    method: 'POST',
+    mode:   'no-cors',                // ← bypass CORS pre-flight
+    body:   JSON.stringify({ swipes })// ← raw body, no header
+  })
+  .finally(() => show(10));           // always go to “Thank-you”
 }
 </script>
 </body>
