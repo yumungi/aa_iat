@@ -1,207 +1,68 @@
+<!-- swipe-survey.html  (LONG format to Google Sheet) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Swipe‑Bias Survey</title>
-  
-  <!-- Hammer.js for swipe gestures -->
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <style>
-    :root {
-      font-family: system-ui, Arial, sans-serif;
-    }
-
-    /* ---- Layout & scroll locking ---- */
-    html, body {
-      height: 100%;
-      margin: 0;
-      overflow: hidden;          /* Disable vertical scroll */
-      touch-action: pan-x;       /* Allow horizontal pans only */
-      overscroll-behavior: none; /* Prevent iOS bounce */
-    }
-
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #f9fafb;
-      transition: background-color 0.25s ease;
-    }
-
-    /* Full‑screen tint while dragging */
-    body.tint-left  { background: rgba(239, 68, 68, 0.25); }
-    body.tint-right { background: rgba(34, 197, 94, 0.25); }
-
-    /* ---- Page containers ---- */
-    .page {
-      display: none;
-      width: 100%;
-      max-width: 420px;
-      padding: 1.5rem;
-      box-sizing: border-box;
-    }
-    .page.active { display: block; }
-
-    h1, h2 { text-align: center; margin: 0 0 0.75rem; }
-
-    label { display: block; margin: 0.5rem 0 0.25rem; }
-
-    input[type="text"], select {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.95rem;
-    }
-
-    .btn {
-      display: block;
-      margin: 1.25rem auto 0;
-      padding: 0.6rem 1.5rem;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    /* ---- Image card ---- */
-    .image-wrapper {
-      position: relative;
-      width: 100%;
-      height: 420px;
-      margin-top: 0.5rem;
-      overflow: hidden;
-    }
-    .image-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 12px;
-      touch-action: none; /* Hammer pans only */
-    }
-
-    /* ---- Results table ---- */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.8rem;
-    }
-    th, td {
-      border: 1px solid #e5e7eb;
-      padding: 0.35rem;
-      text-align: center;
-    }
-
-    /* ---- Loader ---- */
-    #loadingScreen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .loader {
-      width: 64px;
-      height: 64px;
-      border: 8px solid #e5e7eb;
-      border-top: 8px solid #2563eb;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    :root{font-family:system-ui,Arial,sans-serif}
+    html,body{height:100%;margin:0;overflow:hidden;touch-action:pan-x;overscroll-behavior:none}
+    body{display:flex;justify-content:center;align-items:center;background:#f9fafb;transition:background-color .25s}
+    body.tint-left{background:rgba(239,68,68,.25)}
+    body.tint-right{background:rgba(34,197,94,.25)}
+    .page{display:none;width:100%;max-width:420px;padding:1.5rem;box-sizing:border-box}
+    .active{display:block}
+    h1,h2{text-align:center;margin:0 0 .75rem}
+    label{display:block;margin:.5rem 0 .25rem}
+    input,select{width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px;font-size:.95rem}
+    .btn{display:block;margin:1.25rem auto 0;padding:.6rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;text-align:center}
+    .image-wrapper{position:relative;width:100%;height:420px;margin-top:.5rem;overflow:hidden}
+    .image-wrapper img{width:100%;height:100%;object-fit:cover;border-radius:12px;touch-action:none}
+    #loadingScreen{display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .loader{width:64px;height:64px;border:8px solid #e5e7eb;border-top:8px solid #2563eb;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
-  <!-- Page 0 ▸ Loading ---------------------------------------------- -->
+  <!-- 0 ▸ Loading -------------------------------------------------------------- -->
   <div id="page0" class="page active">
     <div class="loader"></div>
-    <p id="progressText" style="margin-top:1rem;font-size:0.9rem">Loading images…</p>
+    <p id="progressText" style="margin-top:1rem;font-size:.9rem">Loading images…</p>
   </div>
 
-  <!-- Page 1 ▸ Demographics ------------------------------------------ -->
+  <!-- 1 ▸ Demographics -------------------------------------------------------- -->
   <div id="page1" class="page">
     <h1>Research Survey</h1>
-
-    <label for="age">Age</label>
-    <input id="age" type="text" placeholder="Enter your age">
-
-    <label for="gender">Gender</label>
-    <select id="gender">
-      <option value="">Select…</option>
-      <option>Female</option>
-      <option>Male</option>
-      <option>Other</option>
-    </select>
-
-    <label for="year">Year Level</label>
-    <select id="year">
-      <option value="">Select…</option>
-      <option>MD1</option>
-      <option>MD2</option>
-      <option>MD3</option>
-      <option>MD4</option>
-      <option>Other</option>
-    </select>
-
+    <label>Age <input id="age" required></label>
+    <label>Sex <select id="sex" required><option value="">Select…</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+    <label>Year Level <select id="year" required><option value="">Select…</option><option>MD1</option><option>MD2</option><option>MD3</option><option>MD4</option><option>Other</option></select></label>
     <label><input id="consent" type="checkbox"> I consent to participate anonymously</label>
     <button class="btn" id="demNext">Next</button>
   </div>
 
-  <!-- Page 2 ▸ Instructions ------------------------------------------ -->
+  <!-- 2 ▸ Instructions -------------------------------------------------------- -->
   <div id="page2" class="page">
     <h2>Instructions</h2>
-    <p>
-      You will see questions followed by images.<br>
-      <strong>Swipe right</strong> to <strong>agree</strong>, <strong>swipe left</strong> to <strong>disagree</strong>.<br>
-      Respond quickly and honestly. All data are anonymous.
-    </p>
+    <p>Swipe <strong>right</strong> to <strong>agree</strong>, left to <strong>disagree</strong>. Respond quickly and honestly.</p>
     <button class="btn" id="instNext">Start</button>
   </div>
 
-  <!-- Page 3 ▸ Prompt 1 ---------------------------------------------- -->
-  <div id="page3" class="page">
-    <h2>I would like to be friends with this person</h2>
-    <button class="btn" id="p1Begin">Show images</button>
-  </div>
+  <!-- 3 ▸ Prompt blocks ------------------------------------------------------- -->
+  <div id="page3" class="page"><h2>I would like to be friends with this person</h2><button class="btn" id="p1Begin">Show images</button></div>
+  <div id="page4" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img1" alt="stimulus"></div></div>
 
-  <!-- Page 4 ▸ Images 1 ---------------------------------------------- -->
-  <div id="page4" class="page">
-    <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img1" alt="stimulus"></div>
-  </div>
+  <div id="page5" class="page"><h2>I would like to work with this person</h2><button class="btn" id="p2Begin">Show images</button></div>
+  <div id="page6" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img2" alt="stimulus"></div></div>
 
-  <!-- Page 5 ▸ Prompt 2 ---------------------------------------------- -->
-  <div id="page5" class="page">
-    <h2>I would like to work with this person</h2>
-    <button class="btn" id="p2Begin">Show images</button>
-  </div>
+  <div id="page7" class="page"><h2>I feel sorry for this person</h2><button class="btn" id="p3Begin">Show images</button></div>
+  <div id="page8" class="page"><h2>Swipe to respond</h2><div class="image-wrapper"><img id="img3" alt="stimulus"></div></div>
 
-  <!-- Page 6 ▸ Images 2 ---------------------------------------------- -->
-  <div id="page6" class="page">
-    <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img2" alt="stimulus"></div>
-  </div>
-
-  <!-- Page 7 ▸ Prompt 3 ---------------------------------------------- -->
-  <div id="page7" class="page">
-    <h2>I feel sorry for this person</h2>
-    <button class="btn" id="p3Begin">Show images</button>
-  </div>
-
-  <!-- Page 8 ▸ Images 3 ---------------------------------------------- -->
-  <div id="page8" class="page">
-    <h2>Swipe to respond</h2>
-    <div class="image-wrapper"><img id="img3" alt="stimulus"></div>
-  </div>
-
-  <!-- Page 9 ▸ Familiarity ------------------------------------------- -->
+  <!-- 9 ▸ Familiarity ---------------------------------------------------------- -->
   <div id="page9" class="page">
-    <h2>How familiar are you with Alopecia Areata?</h2>
-    <select id="familiar">
+    <h2>How familiar are you with Alopecia Areata?</h2>
+    <select id="familiar" required>
       <option value="">Select…</option>
       <option>I have never heard of alopecia areata</option>
       <option>I have heard of alopecia areata, but am not too familiar with it</option>
@@ -211,187 +72,123 @@
     <button class="btn" id="famNext">Submit</button>
   </div>
 
-  <!-- Page 10 ▸ Results ---------------------------------------------- -->
-  <div id="page10" class="page">
-    <h2>Thank you!</h2>
-    <p id="statusMsg" style="text-align:center;font-size:0.9rem"></p>
-    <table id="resultsTbl">
-      <thead>
-        <tr>
-          <th>Prompt</th><th>Image</th><th>Direction</th><th>RT (ms)</th>
-          <th>Age</th><th>Gender</th><th>Year</th><th>Familiarity</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <!-- 10 ▸ Thank‑you ---------------------------------------------------------- -->
+  <div id="page10" class="page"><h2>Thank you!</h2><p style="text-align:center;font-size:.9rem">Your responses have been submitted.</p></div>
 
-  <script>
-    /***************** CONFIG *****************/
-    const IMAGE_COUNT      = 5;          // per category (alopecia-x.jpg, hair-x.jpg)
-    const TINT_DURATION    = 250;        // ms tint persists after swipe
-    const SWIPE_THRESHOLD  = 80;         // px before commit
-    // ↳ Replace with your deployed Google Apps Script Web App URL
-    const SHEETS_ENDPOINT  = 'https://script.google.com/macros/s/AKfycbzKHkteb-3CsNFZWe5Vdf9MGyIbFKPssRXq8gC8s3Lcb0t6t798AH_eY2eENmhTekEx/exec';
-    /******************************************/
+<script>
+/**** CONFIG ****/
+const IMAGES_PER_CAT = 5;                       // alopecia‑x / hair‑x
+const TINT_MS        = 200;                     // tint fade‑out
+const THRESH_PX      = 80;                      // commit distance
+const ENDPOINT       = 'https://script.google.com/macros/s/AKfycbzKHkteb-3CsNFZWe5Vdf9MGyIbFKPssRXq8gC8s3Lcb0t6t798AH_eY2eENmhTekEx/exec';
+/*****************/
 
-    /* ---------- Utilities ---------- */
-    const pages = [...document.querySelectorAll('.page')];
-    const showPage = i => pages.forEach((p,idx)=>p.classList.toggle('active', idx===i));
-    const shuffle  = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+/* Helpers */
+const pages=[...document.querySelectorAll('.page')];
+const show=i=>pages.forEach((p,idx)=>p.classList.toggle('active',idx===i));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 
-    /* ---------- Preload images ---------- */
-    const IMG_LIST = [
-      ...Array.from({length:IMAGE_COUNT},(_,i)=>`alopecia-${i+1}.jpg`),
-      ...Array.from({length:IMAGE_COUNT},(_,i)=>`hair-${i+1}.jpg`)
-    ];
-    const progressTxt = document.getElementById('progressText');
-    let loaded = 0;
-    IMG_LIST.forEach(src => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        progressTxt.textContent = `Loading ${loaded}/${IMG_LIST.length}`;
-        if (loaded === IMG_LIST.length) {
-          showPage(1);
-          init();
-        }
-      };
-      img.src = src;
-    });
+/* Preload */
+const IMGS=[...Array.from({length:IMAGES_PER_CAT},(_,i)=>`alopecia-${i+1}.jpg`),...Array.from({length:IMAGES_PER_CAT},(_,i)=>`hair-${i+1}.jpg`)];
+let loaded=0;IMGS.forEach(src=>{const img=new Image();img.onload=img.onerror=()=>{loaded++;progressText.textContent=`Loading ${loaded}/${IMGS.length}`;if(loaded===IMGS.length){show(1);init();}};img.src=src;});
 
-    /* ---------- Global state ---------- */
-    let list1=[],list2=[],list3=[],idx1=0,idx2=0,idx3=0,startT=0;
-    const results=[];
-    const demo={age:'',gender:'',year:'',familiar:''};
+/* State */
+let list1=[],list2=[],list3=[];let idx1=0,idx2=0,idx3=0,startT=0;
+const demo={id:uid(),age:'',sex:'',year:'',fam:''};
+const swipes=[]; // long format rows
 
-    /* ---------- Form & nav ---------- */
-    function init(){
-      demNext.onclick = () => {
-        if(!consent.checked){ alert('Consent required'); return; }
-        demo.age    = age.value.trim();
-        demo.gender = gender.value;
-        demo.year   = year.value;
-        if(!demo.age || !demo.gender || !demo.year){ alert('Please complete all fields'); return; }
-        showPage(2);
-      };
+function init(){
+  demNext.onclick=()=>{
+    if(!consent.checked){alert('Consent required');return;}
+    demo.age=age.value.trim(); demo.sex=sex.value; demo.year=year.value;
+    if(!demo.age||!demo.sex||!demo.year){alert('Complete all fields');return;}
+    show(2);
+  };
+  instNext.onclick = ()=>show(3);
 
-      instNext.onclick = () => showPage(3);
+  p1Begin.onclick = ()=>startBlock(1,'Friends',img1,list1,4);
+  p2Begin.onclick = ()=>startBlock(2,'Work',   img2,list2,6);
+  p3Begin.onclick = ()=>startBlock(3,'Sorry',  img3,list3,8);
 
-      p1Begin.onclick = () => {
-        list1 = shuffle([...IMG_LIST]);
-        idx1  = 0;
-        img1.src = list1[idx1];
-        startT   = performance.now();
-        attachSwipe(img1, 1);
-        showPage(4);
-      };
+  famNext.onclick = ()=>{
+    if(!familiar.value){alert('Select familiarity');return;}
+    demo.fam=familiar.value;
+    upload();
+  };
+}
 
-      p2Begin.onclick = () => {
-        list2 = shuffle([...IMG_LIST]);
-        idx2  = 0;
-        img2.src = list2[idx2];
-        startT   = performance.now();
-        attachSwipe(img2, 2);
-        showPage(6);
-      };
+function startBlock(num,label,imgEl,list,showIdx){
+  list.length=0; list.push(...shuffle([...IMGS]));
+  if(num===1){list1=list;} if(num===2){list2=list;} if(num===3){list3=list;}
+  if(num===1) idx1=0; if(num===2) idx2=0; if(num===3) idx3=0;
+  imgEl.src=list[0];
+  startT=performance.now();
+  attachSwipe(imgEl,label,num);
+  show(showIdx);
+}
 
-      p3Begin.onclick = () => {
-        list3 = shuffle([...IMG_LIST]);
-        idx3  = 0;
-        img3.src = list3[idx3];
-        startT   = performance.now();
-        attachSwipe(img3, 3);
-        showPage(8);
-      };
+function attachSwipe(imgEl,prompt,setIdx){
+  const mc=new Hammer(imgEl);
+  mc.get('pan').set({direction:Hammer.DIRECTION_HORIZONTAL,threshold:0});
 
-      famNext.onclick = () => {
-        if(!familiar.value){ alert('Please select familiarity'); return; }
-        demo.familiar = familiar.value;
-        finish();
-      };
+  mc.on('panmove',ev=>{
+    imgEl.style.transform=`translate(${ev.deltaX}px,${-Math.abs(ev.deltaX)*0.2}px) rotate(${ev.deltaX*0.05}deg)`;
+    if(ev.deltaX>0){document.body.classList.add('tint-right');document.body.classList.remove('tint-left');}
+    else if(ev.deltaX<0){document.body.classList.add('tint-left');document.body.classList.remove('tint-right');}
+  });
+
+  mc.on('panend',ev=>{
+    setTimeout(()=>document.body.classList.remove('tint-left','tint-right'),TINT_MS);
+    if(Math.abs(ev.deltaX)<THRESH_PX){
+      imgEl.style.transition='transform .25s';
+      imgEl.style.transform='translate(0,0)';
+      imgEl.addEventListener('transitionend',()=>imgEl.style.transition='',{once:true});
+      return;
     }
+    const agree = ev.deltaX>0;
+    const row   = {
+      id:       demo.id,
+      age:      demo.age,
+      sex:      demo.sex,
+      year:     demo.year,
+      familiar: demo.fam, // may be empty; filled later
+      prompt,
+      image:    imgEl.src.split('/').pop(),
+      direction:agree?'agree':'disagree',
+      rt:       Math.round(performance.now()-startT)
+    };
+    swipes.push(row);
 
-    /* ---------- Swipe handler ---------- */
-    function attachSwipe(imgEl, setIdx){
-      const mc = new Hammer(imgEl);
-      mc.get('pan').set({ direction: Hammer.DIRECTION_HORIZONTAL, threshold: 0 });
+    const finalX=agree?window.innerWidth:-window.innerWidth;
+    imgEl.style.transition='transform .45s';
+    imgEl.style.transform=`translate(${finalX}px,-${window.innerHeight*0.4}px) rotate(${agree?40:-40}deg)`;
+    imgEl.addEventListener('transitionend',()=>{
+      imgEl.style.transition='';imgEl.style.transform='translate(0,0)';nextImage(setIdx,imgEl);
+    },{once:true});
+  });
+}
 
-      mc.on('panmove', ev => {
-        imgEl.style.transform = `translate(${ev.deltaX}px, ${-Math.abs(ev.deltaX)*0.2}px) rotate(${ev.deltaX*0.05}deg)`;
-        if(ev.deltaX>0){ document.body.classList.add('tint-right'); document.body.classList.remove('tint-left'); }
-        else if(ev.deltaX<0){ document.body.classList.add('tint-left');  document.body.classList.remove('tint-right'); }
-      });
+function nextImage(setIdx,imgEl){
+  if(setIdx===1){
+    idx1++; if(idx1>=list1.length){show(5); return;}
+    imgEl.src=list1[idx1]; startT=performance.now();
+  }else if(setIdx===2){
+    idx2++; if(idx2>=list2.length){show(7); return;}
+    imgEl.src=list2[idx2]; startT=performance.now();
+  }else{
+    idx3++; if(idx3>=list3.length){show(9); return;}
+    imgEl.src=list3[idx3]; startT=performance.now();
+  }
+}
 
-      mc.on('panend', ev => {
-        setTimeout(()=>document.body.classList.remove('tint-left','tint-right'), TINT_DURATION);
+function upload(){
+  // fill familiarity into each row
+  swipes.forEach(r=>r.familiar=demo.fam);
 
-        if(Math.abs(ev.deltaX) < SWIPE_THRESHOLD){  // snap back
-          imgEl.style.transition = 'transform .25s';
-          imgEl.style.transform  = 'translate(0,0)';
-          imgEl.addEventListener('transitionend',()=>imgEl.style.transition='', {once:true});
-          return;
-        }
-
-        const agree  = ev.deltaX > 0;
-        const prompts = {1:'Friends', 2:'Work', 3:'Sorry'};
-        results.push({
-          prompt:     prompts[setIdx],
-          image:      imgEl.src.split('/').pop(),
-          direction:  agree ? 'agree' : 'disagree',
-          rt:         Math.round(performance.now() - startT)
-        });
-
-        const finalX = agree ? window.innerWidth : -window.innerWidth;
-        imgEl.style.transition = 'transform .45s';
-        imgEl.style.transform  = `translate(${finalX}px, -${window.innerHeight*0.4}px) rotate(${agree?40:-40}deg)`;
-        imgEl.addEventListener('transitionend',()=>{
-          imgEl.style.transition='';
-          imgEl.style.transform='translate(0,0)';
-          loadNext(setIdx);
-        }, {once:true});
-      });
-    }
-
-    /* ---------- Advance image / stage ---------- */
-    function loadNext(setIdx){
-      if(setIdx===1){
-        idx1++; if(idx1>=list1.length){ showPage(5); return; }
-        img1.src = list1[idx1]; startT = performance.now();
-      }else if(setIdx===2){
-        idx2++; if(idx2>=list2.length){ showPage(7); return; }
-        img2.src = list2[idx2]; startT = performance.now();
-      }else{
-        idx3++; if(idx3>=list3.length){ showPage(9); return; }
-        img3.src = list3[idx3]; startT = performance.now();
-      }
-    }
-
-    /* ---------- Finish & upload ---------- */
-    function finish(){
-      // Populate table
-      const tbody = document.querySelector('#resultsTbl tbody');
-      tbody.innerHTML='';
-      results.forEach(r=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML = `<td>${r.prompt}</td><td>${r.image}</td><td>${r.direction}</td><td>${r.rt}</td>`+
-                       `<td>${demo.age}</td><td>${demo.gender}</td><td>${demo.year}</td><td>${demo.familiar}</td>`;
-        tbody.appendChild(tr);
-      });
-
-      // Upload to Google Sheets
-      document.getElementById('statusMsg').textContent = 'Uploading…';
-      fetch(SHEETS_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ demo, swipes: results })
-      })
-      .then(r=>r.ok ? 'Saved!' : 'Upload failed')
-      .catch(()=> 'Upload failed')
-      .then(msg=> document.getElementById('statusMsg').textContent = msg);
-
-      showPage(10);
-    }
-  </script>
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({swipes})})
+    .finally(()=>show(10));
+}
+</script>
 </body>
 </html>
