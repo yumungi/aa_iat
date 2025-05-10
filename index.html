@@ -117,10 +117,8 @@
       list2=makeList(); idx2=0;
       const img=document.getElementById('img2'); img.src=list2[idx2]; startT=performance.now(); addDrag(img,2); showPage(5);
     });
-  };
-
-  // Add event listener for the 'famNext' button
-  document.getElementById('famNext').addEventListener('click', () => {
+    
+    document.getElementById('famNext').addEventListener('click', () => {
     const famSel = document.getElementById('famSel');
     if (!famSel.value) {
       alert('Please select how familiar you are with Alopecia Areata.');
