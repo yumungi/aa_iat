@@ -119,6 +119,18 @@
     });
   };
 
+  // Add event listener for the 'famNext' button
+  document.getElementById('famNext').addEventListener('click', () => {
+    const famSel = document.getElementById('famSel');
+    if (!famSel.value) {
+      alert('Please select how familiar you are with Alopecia Areata.');
+      return;
+    }
+    demo.fam = famSel.value; // Save the user's familiarity response
+    showPage(7); // Move to the results page
+  });
+};
+
   /* ----- Bootstrap ----- */
   preload().then(()=>{
     document.getElementById('loadingScreen').style.display='none';
